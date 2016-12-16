@@ -10,7 +10,8 @@
     "require": {
         "php": ">=5.5.0",
         "yiisoft/yii2": "2.0.*",
-        "linslin/yii2-curl": "1.0.*"
+        "linslin/yii2-curl": "1.0.*",
+        "yiisoft/yii2-imagine": "^2.0"
     },
     "autoload": {
     "psr-4": {
