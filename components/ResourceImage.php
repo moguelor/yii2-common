@@ -5,7 +5,6 @@ namespace jmoguelruiz\yii2\common\components;
 use Imagine\Exception\Exception;
 use Imagine\Image\Box;
 use \ImageOptimizer\OptimizerFactory;
-use swapwink\common\models\User;
 use Yii;
 use yii\helpers\Html;
 use yii\imagine\Image;
@@ -77,11 +76,11 @@ class ResourceImage
      *
      * @return string nombre del recurso
      */
-    public static function getResource($type, $imageSize)
+    public static function getResource($type, $imageSize = self::SIZE_ORIGINAL)
     {
         switch ($type) {
-            case self::LOGO:
-                $resource = self::$_player . DIRECTORY_SEPARATOR . self::$_player .  self::getImageSize($imageSize);
+            case self::PLAYER:
+                $resource = self::$_player .  self::getImageSize($imageSize);
                 break;
             default :
                 $resource = '';
@@ -188,7 +187,8 @@ class ResourceImage
             'isPrimal' => true,
             'sizeImage' => self::SIZE_THUMB,
             'extraParams' => [
-                'gender' => User::MAN
+                //TODO: Gender of user.
+//                'gender' => User::MAN 
             ]
         ], $options);
         
@@ -265,27 +265,18 @@ class ResourceImage
     {
         self::setEnviroment();
 
-        switch ($type) {
-            case self::NOTIFICATION:
-                if (!empty(Yii::$app->params['dir_notification_default'])) {
-                    return Yii::$app->params['dir_notification_default'];
-                }
-                break;
-            case self::LOGO:
-                if (!empty(Yii::$app->params['dir_aff_default'])) {
-                    return Yii::$app->params['dir_aff_default'];
-                }
-                break;
-            case self::AVATAR:
-                return self::getAvatarDefault($params);
-            case self::COUPON:
-                if (!empty(Yii::$app->params['dir_coupon_default'])) {
-                    return Yii::$app->params['dir_coupon_default'];
-                }
-                break;
-            default:
-                return '';
-        }
+       /**
+        * TODO: Descoment with types of images defaults is valid.
+        */
+//        switch ($type) {
+//            case self::NOTIFICATION:
+//                if (!empty(Yii::$app->params['dir_notification_default'])) {
+//                    return Yii::$app->params['dir_notification_default'];
+//                }
+//                break;
+//            default:
+//                return '';
+//        }
 
         $resource = self::getResource($type);
 
@@ -306,7 +297,9 @@ class ResourceImage
      */
     public static function getAvatarDefault($params){
         
-        return !empty($params['gender']) && $params['gender'] == User::WOMAN ? Yii::$app->params['dir_avatar_women'] : Yii::$app->params['dir_avatar_men'];
+        return "";
+        //TODO: Descoment for gender of user with will be available.
+//        return !empty($params['gender']) && $params['gender'] == User::WOMAN ? Yii::$app->params['dir_avatar_women'] : Yii::$app->params['dir_avatar_men'];
         
     }
 
@@ -317,12 +310,13 @@ class ResourceImage
      * @param string       $name Nombre del elemento
      * @param UploadedFile $file Objeto imagen.
      * @param int          $type Tipo de elemento.
+     * @param bool         $isPrimal True si es el principal, false si es el temporal. 
      * 
      * @return bool true | false Si se movio correctamente.
      */
-    public static function uploadImageFile($name, $file, $type)
+    public static function uploadImageFile($name, $file, $type, $isPrimal = false)
     {
-        $target_path = self::getResourcePath($name, $type, false);
+        $target_path = self::getResourcePath($name, $type, $isPrimal);
 
         $success = $file->saveAs($target_path);
 
