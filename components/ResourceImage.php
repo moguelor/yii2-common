@@ -12,6 +12,9 @@ use yii\imagine\Image;
 class ResourceImage
 {
     const PLAYER = 1;
+    const TEAM_PHOTO = 2;
+    const TEAM_LOGO = 3;
+    const TEAM_ECNL = 4;
 
     /** Entornos **/
     const ENVIROMENT_DEV = "dev";
@@ -30,6 +33,10 @@ class ResourceImage
     private static $_base = 'images';
     private static $_prefix = "_";
     private static $_player = "player";
+    private static $_team = "team";
+    private static $_photo = "photo";
+    private static $_logo = "logo";
+    private static $_ecnl = "ecnl";
     private static $_temp = "temp";
     private static $_default = "default.png";
     private static $_enviroment = "dev";
@@ -81,6 +88,15 @@ class ResourceImage
         switch ($type) {
             case self::PLAYER:
                 $resource = self::$_player .  self::getImageSize($imageSize);
+                break;
+            case self::TEAM_PHOTO:
+                $resource =  self::$_team . DIRECTORY_SEPARATOR . self::$_photo .  self::getImageSize($imageSize);
+                break;
+            case self::TEAM_LOGO:
+                $resource =  self::$_team . DIRECTORY_SEPARATOR . self::$_logo .  self::getImageSize($imageSize);
+                break;
+            case self::TEAM_ECNL:
+                $resource =  self::$_team . DIRECTORY_SEPARATOR . self::$_ecnl .  self::getImageSize($imageSize);
                 break;
             default :
                 $resource = '';
@@ -663,7 +679,7 @@ class ResourceImage
     {
         /**
          * TODO: Changed for correct url in case cdn is missing.
-         * @author Obed.
+         * Reported: Obed
          */
         return (isset(Yii::$app->params['cdn']) ? Yii::$app->params['cdn'] . "/" : "http://cdn.swapwink.com/");
     }
