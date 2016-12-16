@@ -526,13 +526,28 @@ class ResourceImage
      */
     public static function deleteFile($name, $type, $sizeImage = self::SIZE_ORIGINAL)
     {
-        $dst = self::getResourcePath($name, $type, true, false, $sizeImage);
+        
+        /**
+         * TODO: Configure mode local or in s3 to delete images.
+         * @author Obed.
+         */
+        $dst = self::getResourcePath($name, $type, true, true, $sizeImage);
+        unlink($dst);
+        
+        /**
+         * TODO: This is for elimination directly in amazon s3,
+         *       descoment, when we use the service.
+         * @author Obed.
+         
+            $dst = self::getResourcePath($name, $type, true, false, $sizeImage);
+            if (Yii::$app->storage->deleteResource($dst)) {
+                return true;
+            }
 
-        if (Yii::$app->storage->deleteResource($dst)) {
-            return true;
-        }
+            return false;
+         
+        */
 
-        return false;
     }
 
     /**
@@ -648,7 +663,7 @@ class ResourceImage
     {
         /**
          * TODO: Changed for correct url in case cdn is missing.
-         * Reported: Obed
+         * @author Obed.
          */
         return (isset(Yii::$app->params['cdn']) ? Yii::$app->params['cdn'] . "/" : "http://cdn.swapwink.com/");
     }
