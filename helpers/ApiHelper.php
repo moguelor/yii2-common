@@ -32,14 +32,10 @@ class ApiHelper
      */
     public static function unsetElementsInArray($elements, $data)
     {
-
         foreach ($elements as $element) {
-
             if (isset($data[$element])) {
-
                 unset($data[$element]);
             }
         }
     }
-
 }
