@@ -2,11 +2,11 @@
 
 namespace jmoguelruiz\yii2\common\helpers;
 
-use Yii;
-use yii\db\Transaction;
+use yii\web\BadRequestHttpException;
 
-class ApiHelper{
-   
+class ApiHelper
+{
+
     /**
      * 
      * Valida los atributos requeridos.
@@ -24,5 +24,22 @@ class ApiHelper{
         }
     }
 
-}
+    /**
+     * Remove elements in array.
+     * 
+     * @param arr $elements Fields to search in data for remove.
+     * @param arr $data All data.
+     */
+    public static function unsetElementsInArray($elements, $data)
+    {
 
+        foreach ($elements as $element) {
+
+            if (isset($data[$element])) {
+
+                unset($data[$element]);
+            }
+        }
+    }
+
+}
