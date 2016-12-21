@@ -457,7 +457,8 @@ class ResourceImage
         $optimizer->optimize($src);
 
         if (Yii::$app->storage->saveResource($dst, $src)) {
-            if ($removeAfterUpload) {
+            
+            if ($removeAfterUpload && file_exists ( $src )) {
                 unlink($src);
             }
 
@@ -548,8 +549,11 @@ class ResourceImage
          * @author Obed.
          */
         $dst = self::getResourcePath($name, $type, true, true, $sizeImage);
-        unlink($dst);
-        
+
+        if (file_exists($dst)) {
+            unlink($dst);
+        }
+
         /**
          * TODO: This is for elimination directly in amazon s3,
          *       descoment, when we use the service.
@@ -669,7 +673,7 @@ class ResourceImage
         self::setEnviroment();
 
         if ($is_absolute) {
-            return Yii::getAlias('@' . self::$_enviroment . DIRECTORY_SEPARATOR . $folder . (($is_primal) ? '' : self::$_prefix . self::$_temp)) . DIRECTORY_SEPARATOR;
+            return Yii::getAlias('@' . self::$_enviroment ) . DIRECTORY_SEPARATOR . $folder . (($is_primal) ? '' : self::$_prefix . self::$_temp) . DIRECTORY_SEPARATOR;
         }
 
         return self::$_base . DIRECTORY_SEPARATOR . $folder . (($is_primal) ? '' : self::$_prefix . self::$_temp) . DIRECTORY_SEPARATOR;
