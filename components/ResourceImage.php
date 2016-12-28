@@ -22,9 +22,9 @@ class ResourceImage
     const ENVIROMENT_TEST = "test";
     
     /** Directorios Base **/
-    const BASE_PATH_PROD = "frontend/web/images";
-    const BASE_PATH_DEV = "frontend/web/images/dev";
-    const BASE_PATH_TEST = "frontend/web/images/test";
+    const BASE_PATH_PROD = "images";
+    const BASE_PATH_DEV = "images/dev";
+    const BASE_PATH_TEST = "images/test";
     
     /** Medidas soportadas **/
     const SIZE_ORIGINAL = 0;
