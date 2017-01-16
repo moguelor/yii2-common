@@ -2,105 +2,43 @@
 
 namespace jmoguelruiz\yii2\common\components;
 
+use Imagine\Image\Box;
+use Imagine\Image\ManipulatorInterface;
 use Yii;
 use yii\base\Component;
+use yii\base\Exception;
 use yii\helpers\ArrayHelper;
+use yii\imagine\Image;
 use const YII_ENV;
 
 /**
  * Expects:
  * 
- * * Habilitar componente en diferentes entornos.
- *   * Manejar tres entornos predefinidos.
- *      * dev, test, prod.
+ * * Habilitar componente en diferentes entornos. - YA
+ *   * Manejar tres entornos predefinidos. - YA
+ *      * dev, test, prod. - YA
  *          * Si el usuario tiene mas enviroments modificar el ResourceImage local 
- *            para agregar las propiedades de cada enviroment faltantes.
- *   * Poder cambiar base paths de cada entorno.
+ *            para agregar las propiedades de cada enviroment faltantes. - YA
+ *   * Poder cambiar base paths de cada entorno. - YA
  *   * Donde se guardarán las imagenes. (local o s3)
- * * Manejar tipos de recursos.
- *   * avatar, galeria, logo
+ * * Manejar tipos de recursos. - YA
+ *   * avatar, galeria, logo - YA
  * * Guardar imagen en el servidor local.
  * * Guardar imagen en el servidor de amazon s3.
- * * Manejo de directorios temporales avatar_temp.
- * * Manejo de directorios finales avatar.
- * * Generar nombre para guardar el archivo.
+ * * Manejo de directorios temporales avatar_temp. - YA
+ * * Manejo de directorios finales avatar. - YA
+ * * Generar nombre para guardar el archivo. - YA
  * * Procesar imagen antes de guardar, crop , resize etc.
- * * Guardar diferentes tamaños del archivo, original, thumb, etc.
- * * Obtener url del directorio temporal
- * * Obtener url del directorio final.
- * * Habilitar base_path donde se guardaran las imagenes.
+ * * Guardar diferentes tamaños del archivo, original, thumb, etc. - YA
+ * * Obtener url del directorio temporal - YA
+ * * Obtener url del directorio final. - YA
+ * * Habilitar base_path donde se guardaran las imagenes. - YA
  * * Guardar imagen desde una url.
- * * Subir la imagen a un directorio temporal para procesarla despues.
+ * * Subir la imagen a un directorio temporal para procesarla despues. - YA
  * * Renombrar un archivo.
  * * Eliminar un archivo.
  * * Optimización de imagenes al subir.
  * 
- */
-
-/**
- * USESS
- */
-/**
- * <?php
-    
-$resourceImage = Yii::$app->resourceImage;
-
-echo "-- Container -- <br/>";
-echo "* Absolute <br/>";
-echo $resourceImage->getAbsoluteDirectory();
-echo "<br/> * CDN <br/>";
-echo $resourceImage->getCDN();
-echo "<br/>";
-echo "<br/>";
-
-echo "-- Enviroment -- <br/>";
-echo $resourceImage->getBasePath();
-echo "<br/>";
-echo $resourceImage->getBasePath(ResourceImage::ENVIROMENT_PROD);
-echo "<br/>";
-echo "<br/>";
-
-echo "-- Resource -- <br/>";
-echo $resourceImage->getResource(ResourceImage::TYPE_TEAM_PHOTO);
-echo "<br/>";
-echo $resourceImage->getTempResource(ResourceImage::TYPE_TEAM_PHOTO);
-echo "<br/> ";
-echo "<br/>";
-
-echo "-- Size -- <br/>";
-echo $resourceImage->getSize(ResourceImage::SIZE_THUMB);
-echo "<br/>";
-echo "<br/>";
-
-echo "-- URLs -- <br/>";
-echo $resourceImage->generateRoot(['isWebUrl' => true])->getStringUrl();
-echo "<br/>";
-echo "<br/>";
-echo $resourceImage->generateRoot()
-                   ->generateBasePath(['enviroment' => 'test'])
-                   ->getStringUrl();
-echo "<br/>";
-echo "<br/>";
-echo $resourceImage->generateRoot()
-                   ->generateBasePath()
-                   ->generateResource(ResourceImage::TYPE_TEAM_PHOTO)
-                   ->getStringUrl();
-echo "<br/>";
-echo "<br/>";
-echo $resourceImage->generateRoot()
-                   ->generateBasePath()
-                   ->generateResource(ResourceImage::TYPE_TEAM_PHOTO)
-                   ->generateSize(ResourceImage::SIZE_THUMB)
-                   ->getStringUrl();
-echo "<br/>";
-echo "<br/>";
-echo $resourceImage->generateRoot()
-                   ->generateBasePath()
-                   ->generateResource(ResourceImage::TYPE_TEAM_PHOTO)
-                   ->generateSize(ResourceImage::SIZE_ORIGINAL)
-                   ->generateName('ima-one.jpg')
-                   ->getStringUrl();
-?>
  */
 class ResourceImage extends Component
 {
@@ -148,6 +86,12 @@ class ResourceImage extends Component
      * @var type 
      */
     public $prefixTemp = 'temp';
+    
+    /**
+     * Symbol to concatenate the time with the name.
+     * @var string
+     */
+    public $symbolConcatTime = '_';
 
     /**
      * Container base path;
@@ -160,12 +104,54 @@ class ResourceImage extends Component
      * @var string 
      */
     public $cdn;
-
+    
+    /**
+     * Active Root
+     * @var string 
+     */
+    private $activeRoot;
+    
+    /**
+     * Active BasePath
+     * @var string 
+     */
+    private $activeBasePath;
+    
+    /**
+     * Active Resource
+     * @var string 
+     */
+    private $activeResource;
+    
+    /**
+     * Active Size
+     * @var string 
+     */
+    private $activeSize;
+    
+    /**
+     * Active Name
+     * @var string 
+     */
+    private $activeName;
+    
+    /**
+     * Base configuration of url.
+     * @var arr
+     */
+    private $baseConfigUrl;
+    
     /**
      * Concat elements neccesarys to complete the url.
      * @var string 
      */
-    private $stringUrl;
+    private $stringUrl = [
+        'root' => '',
+        'basePath' => '',
+        'resource' => '',
+        'size' => '',
+        'name' => ''
+    ];
 
     /**
      * init
@@ -173,10 +159,161 @@ class ResourceImage extends Component
     public function init()
     {
         parent::init();
-
+        $this->baseConfigUrl = [
+            'root' => ['isWebUrl' => true ],
+            'basePath' => ['enviroment' => $this->getEnviromentRunning()],
+            'resource' => ['type'=>'', 'isTemp' => false],
+            'size' => ['type' => self::SIZE_ORIGINAL],
+            'name' => [
+                'type' => '',
+                'concatTime' => false,
+                'ext' => null
+            ]
+        ];
+        
+        $this->configRoot();
+        $this->configBasePath();
+        $this->configResource();
+        $this->configSize();
+        $this->configName();
+        
         $this->mergeBasePaths();
     }
+    
+    /**
+     * Upload a image to server local.
+     * @param File $file File to upload.
+     * @param string $targetPath Path to upload.
+     */
+    public function upload($file, $targetPath = null){
+        
+        try{
+            
+            $targetPath = empty($targetPath) ? $this->getStringUrl() : $targetPath;
+            $file->saveAs($targetPath);
+            
+        } catch (Exception $ex) {
+           throw new Exception($ex);
+        }
+        
+        return $this;
+        
+    }
+    
+    /**
+     * Save image.
+     */
+    public function save($options = []){
+        
+        $options = ArrayHelper::merge([
+                        'removeSrc' => false,
+                        'src' => $this->getStringUrl(),
+                        'dst' => $this->getStringWithoutTemp(),
+                    ], $options);
+        
+        
+        if($this->serverType == self::SERVER_LOCAL){
+            
+            copy($options['src'], $options['dst']);
+            
+            if($options['removeSrc']){
+                $this->deleteFile($options['src']);
+            }
+        }
+        
+        /**
+         * @todo: Implementar modo en s3.
+         */
+        
+    }
+    
+    public function thumbnail($options = [])
+    {
+        try {
 
+            $options = ArrayHelper::merge([
+                        'src' => $this->getStringUrl(),
+                        'dst' => $this->getStringUrl(),
+                        'width' => 200,
+                        'height' => 200,
+                        'ext' => ''
+                            ], $options);
+
+            Image::thumbnail($options['src'], $options['width'], $options['height'], ManipulatorInterface::THUMBNAIL_INSET)
+                    ->save($options['dst'], ['format' => $options['ext']]);
+        } catch (Exception $exc) {
+            throw new Exception($exc);
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * 
+     * @param type $options
+     */
+    public function crop($options = []){
+        
+        $options = ArrayHelper::merge([
+                    'src' => $this->getStringUrl(),
+                    'dst' => $this->getStringUrl(),
+                    'width' => 200,
+                    'height' => 200,
+                    'points' => [0, 0],
+                    'box' => [200, 200]
+                ], $options);
+        
+        try{
+            
+            Image::crop($options['src'], $options['width'], $options['height'], $options['points'])
+                    ->resize(new Box($options['box'][0], $options['box'][1]))
+                    ->save($options['dst']);
+            
+        } catch (Exception $ex) {
+            throw new Exception;
+        }
+        
+        return $this;
+        
+    }
+    
+    public function configUrl($options)
+    {
+        $this->baseConfigUrl = ArrayHelper::merge($this->baseConfigUrl, $options);
+        
+        $this->configRoot($this->baseConfigUrl['root']);
+        $this->configBasePath($this->baseConfigUrl['basePath']);
+        $this->configResource($this->baseConfigUrl['resource']);
+        $this->configSize($this->baseConfigUrl['size']);
+        $this->configName($this->baseConfigUrl['name']);
+    
+        return $this;
+        
+    }
+    
+    /**
+     * Delete file.
+     * @param string $pathFile File to delete.
+     */
+    public function deleteFile($pathFile){
+        
+        if(file_exists($pathFile)){
+            unlink($pathFile);
+        }
+        
+        /**
+         * @todo: implement in mode s3.
+         */
+        
+    }
+    
+    /**
+     * Get string without temp directory.
+     */
+    public function getStringWithoutTemp(){
+        return str_replace('_temp', '', $this->getStringUrl());
+    }
+    
     /**
      * Generate the name path.
      * 
@@ -187,14 +324,27 @@ class ResourceImage extends Component
      * 
      * Example:
      * [
+     *  "concatTime" => false, If your wish concat time in the name of image, resolve problems with cache, if is True you. should pass a ext.
+     *  "ext" => null
      * ]
      * @return $this
      */
-    public function generateName($name, $options = [])
+    public function configName($options = [])
     {
-        $options = ArrayHelper::merge([
-                        ], $options);
-
+        $this->baseConfigUrl['name'] = ArrayHelper::merge([
+            'title' => '',
+            'concatTime' => false,
+            'ext' => null
+        ], $options);
+        
+        if(empty($this->baseConfigUrl['name']['title'])){
+            $name = $this->getDefaultResource($this->getActiveResource());
+        }
+        
+        if($this->baseConfigUrl['name']['concatTime']){
+            $name = $this->baseConfigUrl['name']['title'] . $this->symbolConcatTime . time() . "." . $this->baseConfigUrl['name']['ext'];
+        }
+        
         $this->concatName($name);
 
         return $this;
@@ -214,12 +364,13 @@ class ResourceImage extends Component
      * ]
      * @return $this
      */
-    public function generateSize($size = null, $options = [])
+    public function configSize($options = [])
     {
-        $options = ArrayHelper::merge([
-                        ], $options);
+        $this->baseConfigUrl['size'] = ArrayHelper::merge([
+            'type' => self::SIZE_ORIGINAL,
+        ], $options);
 
-        $this->concatSize($size);
+        $this->concatSize($this->baseConfigUrl['size']['type']);
 
         return $this;
     }
@@ -240,15 +391,15 @@ class ResourceImage extends Component
      * ]
      * @return $this
      */
-    public function generateResource($resource, $options = [])
+    public function configResource($options = [])
     {
-
-        $options = ArrayHelper::merge([
-                    "isTemp" => false
-                        ], $options);
-
-        $options["isTemp"] ? $this->concatTempResource($resource) : $this->concatResource($resource);
-
+        $this->baseConfigUrl['resource'] = ArrayHelper::merge([
+            'type' => '',
+            'isTemp' => false
+        ], $options);
+        
+        $this->baseConfigUrl['resource']['isTemp'] ? $this->concatTempResource($this->baseConfigUrl['resource']['type']) : $this->concatResource($this->baseConfigUrl['resource']['type']);
+        
         return $this;
     }
 
@@ -266,14 +417,13 @@ class ResourceImage extends Component
      * ]
      * @return $this
      */
-    public function generateBasePath($options = [])
+    public function configBasePath($options = [])
     {
-
-        $options = ArrayHelper::merge([
-                    'enviroment' => $this->getEnviromentRunning(),
-                        ], $options);
-
-        $this->concatBasePath($options['enviroment']);
+        $this->baseConfigUrl['basePath'] = ArrayHelper::merge([
+            'enviroment' => $this->getEnviromentRunning()
+        ], $options);
+        
+        $this->concatBasePath($this->baseConfigUrl['basePath']['enviroment']);
 
         return $this;
     }
@@ -292,14 +442,13 @@ class ResourceImage extends Component
      *  'isWebUrl' => true 
      * ]
      */
-    public function generateRoot($options = [])
+    public function configRoot($options = [])
     {
-
-        $options = ArrayHelper::merge([
-                    'isWebUrl' => true
-                        ], $options);
-
-        $options['isWebUrl'] ? $this->concatCDN() : $this->concatAbsoluteDirectory();
+        $this->baseConfigUrl['root'] = ArrayHelper::merge([
+            'isWebUrl' => true
+        ], $options);
+        
+        $this->baseConfigUrl['root']['isWebUrl'] ? $this->concatCDN() : $this->concatAbsoluteDirectory();
 
         return $this;
     }
@@ -354,6 +503,20 @@ class ResourceImage extends Component
             return $resources[$type];
         }
     }
+    
+    /**
+     * Get the resource specified.
+     * @param string $type Type of resource.
+     */
+    public function getDefaultResource($type)
+    {
+
+        $resources = $this->resourcesDefault();
+
+        if (!empty($resources[$type])) {
+            return $resources[$type];
+        }
+    }
 
     /**
      * Get temporal folder to resource.
@@ -403,7 +566,8 @@ class ResourceImage extends Component
      */
     public function concatAbsoluteDirectory()
     {
-        $this->setStringUrl($this->getAbsoluteDirectory());
+        $absoluteDirectory = $this->getAbsoluteDirectory();
+        $this->setStringUrl($absoluteDirectory, 'root');
         return $this;
     }
 
@@ -413,7 +577,8 @@ class ResourceImage extends Component
      */
     public function concatCDN()
     {
-        $this->setStringUrl($this->getCDN());
+        $cdn = $this->getCDN();
+        $this->setStringUrl($cdn, 'root');
         return $this;
     }
 
@@ -423,7 +588,8 @@ class ResourceImage extends Component
      */
     public function concatBasePath($enviroment = null)
     {
-        $this->setStringUrl($this->getBasePath($enviroment));
+        $basePath = $this->getBasePath($enviroment);
+        $this->setStringUrl($basePath, 'basePath');
         return $this;
     }
 
@@ -433,7 +599,7 @@ class ResourceImage extends Component
      */
     public function concatResource($type)
     {
-        $this->setStringUrl($this->getResource($type));
+        $this->setStringUrl($this->getResource($type), 'resource');
         return $this;
     }
 
@@ -442,8 +608,8 @@ class ResourceImage extends Component
      * @return $this
      */
     public function concatTempResource($type)
-    {
-        $this->setStringUrl($this->getTempResource($type));
+    {   
+        $this->setStringUrl($this->getTempResource($type), 'resource');
         return $this;
     }
 
@@ -454,16 +620,17 @@ class ResourceImage extends Component
     public function concatSize($size = self::SIZE_ORIGINAL)
     {
         if (!empty($size) && $size != self::SIZE_ORIGINAL) {
-            $this->setStringUrl($this->getSize($size));
+            $this->setStringUrl($this->getSize($size), 'size');
         }
-
+        
         return $this;
     }
 
     public function concatName($name)
     {
-        $this->setStringUrl($name, "");
+        $this->setStringUrl($name, 'name');
     }
+    
 
     /**
      * Get string url
@@ -471,9 +638,15 @@ class ResourceImage extends Component
      */
     public function getStringUrl()
     {
-        $stringUrl = $this->stringUrl;
-        $this->clearStringUrl();
-        return $stringUrl;
+        
+        $arrayUrls = array_filter($this->stringUrl,function($path){
+            if(!empty($path)){
+                return $path;
+            }
+        });
+        
+        return implode(DIRECTORY_SEPARATOR, array_values($arrayUrls));
+        
     }
 
     /**
@@ -481,10 +654,9 @@ class ResourceImage extends Component
      * @param string $path Path to concatenate.
      * @param string $separator Separator.
      */
-    public function setStringUrl($path, $separator = DIRECTORY_SEPARATOR)
+    public function setStringUrl($path, $element)
     {
-
-        $this->stringUrl .= $path . $separator;
+        $this->stringUrl[$element] = $path;
     }
 
     /**
@@ -502,6 +674,14 @@ class ResourceImage extends Component
      */
     public function resources()
     {
+        return [];
+    }
+    
+    /**
+     * Url to images by default.
+     * @return []
+     */
+    public function resourcesDefault(){
         return [];
     }
 
@@ -525,7 +705,42 @@ class ResourceImage extends Component
     {
         $this->stringUrl = "";
     }
-
+    
+    /**
+     * Get active root;
+     */
+    public function getActiveRoot(){
+       return !empty($this->stringUrl['root']) ? $this->stringUrl['root'] : null;
+    }
+    
+    /**
+     * Get active activeBasePath;
+     */
+    public function getActiveBasePath(){
+      return !empty($this->stringUrl['basePath']) ? $this->stringUrl['basePath'] : null;
+    }
+    
+    /**
+     * Get active activeResource;
+     */
+    public function getActiveResource(){
+       return !empty($this->stringUrl['resource']) ? str_replace('_temp', '', $this->stringUrl['resource']) : null;
+    }
+    
+    /**
+     * Get active activeSize;
+     */
+    public function getActiveSize(){
+       return !empty($this->stringUrl['size']) ? $this->stringUrl['size'] : null;
+    }
+    
+    /**
+     * Get active activeName;
+     */
+    public function getActiveName(){
+      return !empty($this->stringUrl['name']) ? $this->stringUrl['name'] : null;
+    }
+    
     /**
      * Integrate the basePaths defaults with the user basepaths;
      */
@@ -537,5 +752,6 @@ class ResourceImage extends Component
                     'prod' => 'images'
                         ], $this->basePaths);
     }
+    
 
 }
