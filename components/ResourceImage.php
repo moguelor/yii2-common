@@ -358,12 +358,16 @@ class ResourceImage
      */
     public static function generateImageSquare($src, $dst, $width, $height, $points = [0, 0], $box = [200, 200])
     {
+        // Fix for points 'x' or 'y' is minor a 0, set 0 because the point cant be out of bound.
+        $points[0] = $points[0] < 0 ? 0 : $points[0];
+        $points[1] = $points[1] < 0 ? 0 : $points[1];
+        
         try {
             Image::crop($src, $width, $height, [$points[0], $points[1]])
                     ->resize(new Box($box[0], $box[1]))
                     ->save($dst);
         } catch (Exception $exc) {
-            Yii::error($exc->getTraceAsString());
+            Yii::error($exc);
 
             return false;
         }
