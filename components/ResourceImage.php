@@ -42,6 +42,7 @@ use const YII_ENV;
  */
 class ResourceImage extends Component
 {
+
     /**
      * Enviroments
      */
@@ -143,7 +144,7 @@ class ResourceImage extends Component
         $this->mergeBasePaths();
     }
     
-    public function workWithSrc($src){
+    public function setSrcTemp($src){
         $this->srcTemp = $src;
     }
     
@@ -228,9 +229,6 @@ class ResourceImage extends Component
 
         try {
 
-        $points[0] = $points[0] < 0 ? 0 : $points[0];
-        $points[1] = $points[1] < 0 ? 0 : $points[1];
-
             Image::crop($src, $options['width'], $options['height'], $options['points'])
                     ->resize(new Box($options['box'][0], $options['box'][1]))
                     ->save($dst);
@@ -259,9 +257,10 @@ class ResourceImage extends Component
      * Delete file.
      * @param string $pathFile File to delete.
      */
-    public function deleteFile($pathFile)
+    public function deleteFile($pathFile = null)
     {
-
+        $pathFile = !empty($pathFile) ? $pathFile : $this->getSrcTemp();
+        
         if (file_exists($pathFile)) {
             unlink($pathFile);
         }
