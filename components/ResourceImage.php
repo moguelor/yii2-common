@@ -363,9 +363,11 @@ class ResourceImage
         $points[1] = $points[1] < 0 ? 0 : $points[1];
         
         try {
-            Image::crop($src, $width, $height, [$points[0], $points[1]])
-                    ->resize(new Box($box[0], $box[1]))
-                    ->save($dst);
+            
+            Image::autorotate($src)
+            ->crop(new Point($points[0], $points[1]), new Box($width, $height))
+            ->resize(new Box($box[0], $box[1]))
+            ->save($dst);
         } catch (Exception $exc) {
             Yii::error($exc);
 
