@@ -2,12 +2,15 @@
 
 namespace jmoguelruiz\yii2\common\components;
 
+use DateTime;
+use ImageOptimizer\OptimizerFactory;
 use Imagine\Exception\Exception;
 use Imagine\Image\Box;
-use \ImageOptimizer\OptimizerFactory;
+use Imagine\Image\Point;
 use Yii;
 use yii\helpers\Html;
 use yii\imagine\Image;
+use const YII_ENV;
 
 class ResourceImage
 {
@@ -218,7 +221,7 @@ class ResourceImage
             return self::getCDN() . self::getPath($resource, $name, true, false);
         }
         
-        return DIRECTORY_SEPARATOR . self::getPath($resource, $name, false, false) . "?" . (new \DateTime())->getTimestamp();
+        return DIRECTORY_SEPARATOR . self::getPath($resource, $name, false, false) . "?" . (new DateTime())->getTimestamp();
         
     }
     
