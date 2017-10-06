@@ -369,7 +369,8 @@ class ResourceImage
             
             Image::autorotate($src)
             ->crop(new Point($points[0], $points[1]), new Box($width, $height))
-            ->resize(new Box($box[0], $box[1]))
+//            Si se desea aplicar el resize a la imagen cropeada descomentar la siguiente linea:
+//            ->resize(new Box($box[0], $box[1]))
             ->save($dst);
         } catch (Exception $exc) {
             Yii::error($exc);
