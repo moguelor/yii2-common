@@ -371,7 +371,7 @@ class ResourceImage
             ->crop(new Point($points[0], $points[1]), new Box($width, $height))
 //            Si se desea aplicar el resize a la imagen cropeada descomentar la siguiente linea:
 //            ->resize(new Box($box[0], $box[1]))
-            ->save($dst);
+            ->save($dst, ['jpeg_quality' => 100, 'png_compression_level' => 9]);
         } catch (Exception $exc) {
             Yii::error($exc);
 
